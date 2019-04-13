@@ -13,11 +13,12 @@ https://www.valentinog.com/blog/react-webpack-babel/
 `npm i webpack-cli --save-dev`
 
 Next up add the webpackcommand inside package.json:
-`
+
+```
 "scripts": {
   "build": "webpack --mode production"
 }
-`
+```
 
 At this point there is no need to define a configuration file for webpack.
 Older webpack’s version did automatically look for a configuration file.
@@ -27,14 +28,15 @@ In the next section we’ll install and configure Babel for transpiling our code
 `npm i @babel/core babel-loader @babel/preset-env @babel/preset-react --save-dev`
 
 Don’t forget to configure Babel! Create a new file named .babelrc inside the project folder:
-`
+
+```
 {
    "presets": ["@babel/preset-env", "@babel/preset-react"]
 }
-`
+```
 
 Create a file named webpack.config.js and fill it like the following:
-`
+```
  module.exports = {
    module: {
      rules: [
@@ -48,7 +50,7 @@ Create a file named webpack.config.js and fill it like the following:
      ]
    }
  };
-`
+```
 
 `npm i react react-dom --save-dev`
 
@@ -56,7 +58,7 @@ Create a file named webpack.config.js and fill it like the following:
 
 `touch src/js/components/container/FormContainer.jsx`
 
-`
+```
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
@@ -78,13 +80,13 @@ class FormContainer extends Component {
 }
 
 export default FormContainer;
-`
+```
 
 `touch src/js/components/presentational/Input.jsx`
 
 `npm i prop-types --save-dev`
 
-`
+```
 import React from "react";
 import PropTypes from "prop-types";
 
@@ -112,11 +114,11 @@ Input.propTypes = {
 };
 
 export default Input;
-`
+```
 
 At this point we’re ready to update our container component to include the text input:
 
-`
+```
  import React, { Component } from "react";
  import ReactDOM from "react-dom";
  import Input from "../presentational/Input.jsx";
@@ -154,7 +156,7 @@ class FormContainer extends Component {
 }
 
 export default FormContainer;
-`
+```
 
 And now it’s time to wire things up! webpack expects the entry point to be ./src/index.js. Create the file and place an import directive into it for requiring the container component:
 
