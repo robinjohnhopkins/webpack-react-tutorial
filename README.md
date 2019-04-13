@@ -269,7 +269,7 @@ Now, by running:
 
 `npm start`
 
-How to set up React, webpack, and Babel: wrapping up
+##How to set up React, webpack, and Babel: wrapping up
 create-react-app is the way to go for starting off a new React project. Almost everything is configured out of the box. But sooner or later you may want to extend or tweak webpack a bit.
 And if you learn how to set up React, webpack, and Babel by hand you’ll be able to scratch your own itch, or even configure a frontend project from zero.
 This knowledge is also valuable for situations where you don’t need a full blown SPA but you still want to build and distributed your ES6 code. By combining webpack and Babel it is possible to transform a bunch of React components into a bundle suitable for being distributed.
@@ -283,3 +283,214 @@ In the above guide we’ve seen:
 By the end you should be able to start from scratch with React, webpack and Babel.
 For learning more about webpack check out webpack 4 tutorial, from zero conf to production mode.
 
+##Redux
+
+`npm i redux --save-dev`
+
+`mkdir -p src/js/store`
+
+Create a new file named index.jsin src/js/storeand finally initialize the store:
+
+```
+// src/js/store/index.js
+
+import { createStore } from "redux";
+import rootReducer from "../reducers/index";
+
+const store = createStore(rootReducer);
+
+export default store;
+```
+
+`mkdir -p src/js/reducers`
+
+Then create a new file named index.jsin the src/js/reducers:
+
+```
+// src/js/reducers/index.js
+
+const initialState = {
+  articles: []
+};
+
+function rootReducer(state = initialState, action) {
+  return state;
+};
+
+export default rootReducer;
+```
+
+`mkdir -p src/js/actions`
+
+
+Then create a new file named index.jsin src/js/actions:
+
+```
+// src/js/actions/index.js
+
+export function addArticle(payload) {
+  return { type: "ADD_ARTICLE", payload }
+};
+```
+
+`mkdir -p src/js/constants`
+
+
+Then create a new file named action-types.jsinto the src/js/constants:
+
+```
+// src/js/constants/action-types.js
+
+export const ADD_ARTICLE = "ADD_ARTICLE";
+```
+
+Now open up again src/js/actions/index.jsand update the action to use action types:
+
+```
+// src/js/actions/index.js
+
+import { ADD_ARTICLE } from "../constants/action-types";
+
+export function addArticle(payload) {
+  return { type: ADD_ARTICLE, payload };
+}
+```
+
+We’re one step closer to have a working Redux application. Let’s refactor our reducer!
+
+##React Redux tutorial: refactoring the reducer
+
+Open up src/js/reducers/index.js and update the reducer as follow:
+
+```
+// src/js/reducers/index.js
+
+import { ADD_ARTICLE } from "../constants/action-types";
+
+const initialState = {
+  articles: []
+};
+
+function rootReducer(state = initialState, action) {
+  if (action.type === ADD_ARTICLE) {
+    state.articles.push(action.payload);
+  }
+  return state;
+}
+
+export default rootReducer;
+```
+
+Although it’s valid code the above reducer breaks the main Redux principle: immutability.
+Array.prototype.push is an impure function: it alters the original array. But there’s more! Do you rememeber the third principle of Redux? The state is immutable and cannot change in place. Instead in our reducer we’re mutating the original object!
+We need a fix. First we can return a new state, ie a new JavaScript object with Object.assign. This way we keep the original state immutable. Then we can use Array.prototype.concat in place of Array.prototype.push for keeping the initial array immutable:
+
+```
+import { ADD_ARTICLE } from "../constants/action-types";
+
+const initialState = {
+  articles: []
+};
+
+function rootReducer(state = initialState, action) {
+  if (action.type === ADD_ARTICLE) {
+    return Object.assign({}, state, {
+      articles: state.articles.concat(action.payload)
+    });
+  }
+  return state;
+}
+
+export default rootReducer;
+```
+
+In the example above the initial state is left utterly untouched.
+The initial articles array doesn’t change in place.
+The initial state object doesn’t change as well. The resulting state is a copy of the initial state.
+There are two key points for avoiding mutations in Redux:
+
+* Using concat(), slice(), and …spread for arrays
+* Using Object.assign() and …spread for objects
+
+Redux protip: the reducer will grow as your app will become bigger. You can split a big reducer into separate functions and combine them with combineReducers
+
+Redux itself is a small library (2KB). The Redux store exposes a simple API for managing the state. The most important methods are:
+* getState for accessing the current state of the application
+* dispatch for dispatching an action
+* subscribe for listening on state changes
+
+##Play
+We will play in the brower’s console with the above methods.
+To do so we have to export as global variables the store and the action we created earlier.
+Create a new file named src/js/index.js and update the file with the following code:
+
+```
+import store from "../js/store/index";
+import { addArticle } from "../js/actions/index";
+
+window.store = store;
+window.addArticle = addArticle;
+```
+
+Now open up src/index.js as well, clean up its content and update it as follows:
+* import index from "./js/index"
+Now run webpack dev server (or Parcel) with:
+
+`npm start`
+
+head over http://localhost:8080/ and open up the console with F12.
+Since we’ve exported the store as a global variable we can access its methods. Give it a try!
+Start off by accessing the current state:
+
+`store.getState()`
+
+output:
+ 
+`{articles: Array(0)}`
+
+Zero articles. In fact we haven’t update the initial state yet.
+To make things interesting we can listen for state updates with subscribe.
+The subscribe method accepts a callback that will fire whenever an action is dispatched. Dispatching an action means notifying the store that we want to change the state.
+Register the callback with:
+
+`store.subscribe(() => console.log('Look ma, Redux!!'))`
+
+To change the state in Redux we need to dispatch an action. To dispatch an action you have to call the dispatch method.
+We have one action at our disposal: addArticle for adding a new item to the state.
+Let’s dispatch the action with:
+
+`store.dispatch( addArticle({ title: 'React Redux Tutorial for Beginners', id: 1 }) )`
+
+Right after running the above code you should see:
+`Look ma, Redux!!`
+
+To verify that the state changed run again:
+`store.getState()`
+
+The output should be:
+`{articles: Array(1)}`
+
+And that’s it. This is Redux in its simplest form.
+Was that difficult?
+Take your time to explore these three Redux methods as an exercise. Play with them from the console:
+* getState for accessing the current state of the application
+* dispatch for dispatching an action
+* subscribe for listening on state changes
+That’s everything you need to know for getting started with Redux.
+Once you feel confident head over the next section. We’ll go straight to connecting React with Redux!
+
+
+##React Redux tutorial: connecting React with Redux
+
+Redux on its own is framework agnostic. You can use it with vanilla Javascript. Or with Angular. Or with React. There are bindings for joining together Redux with your favorite framework/library.
+For React there is react-redux.
+Before moving forward install react-redux by running:
+
+`npm i react-redux --save-dev`
+
+You will use connect with two or three arguments depending on the use case. The fundamental things to know are:
+* the mapStateToProps function
+* the mapDispatchToProps function
+
+What does mapStateToProps do in react-redux? mapStateToProps does exactly what its name suggests: it connects a part of the Redux state to the props of a React component. By doing so a connected React component will have access to the exact part of the store it needs.
+And what about mapDispatchToProps? mapDispatchToProps does something similar, but for actions. mapDispatchToProps connects Redux actions to React props. This way a connected React component will be able to dispatch actions.
