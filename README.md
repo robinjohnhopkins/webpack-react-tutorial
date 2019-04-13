@@ -177,7 +177,7 @@ Now let’s bring our React experiment to life by including the bundle into an 
 
 Then update the webpack configuration:
 
-`
+```
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 
 module.exports = {
@@ -207,11 +207,11 @@ module.exports = {
     })
   ]
 };
-`
+```
 
 Next up create an HTML file into ./src/index.html (feel free to use whichever CSS library you prefer):
 
-`
+```
 <!DOCTYPE html>
 <html lang="en">
 
@@ -237,15 +237,16 @@ Next up create an HTML file into ./src/index.html (feel free to use whichever CS
 </body>
 
 </html>
-`
+```
 
 One last thing is missing! We must tell our React component to hook itself into the id create-article-form
 Open up `./src/js/components/container/FormContainer.jsx` and add the following at the bottom of the file:
 
-`
+```
  const wrapper = document.getElementById("create-article-form");
  wrapper ? ReactDOM.render(<FormContainer />, wrapper) : false;
-`
+```
+
 Close and save the file.
 Now run the build again with:
 
@@ -256,12 +257,13 @@ Now run the build again with:
 
 Open up package.json to add the start script:
 
-`
+```
  "scripts": {
    "start": "webpack-dev-server --open --mode development",
    "build": "webpack --mode production"
  }
-`
+```
+
 save and close the file.
 Now, by running:
 
