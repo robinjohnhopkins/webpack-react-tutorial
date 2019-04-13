@@ -1,16 +1,16 @@
-==React, webpack, and Babel
+## React, webpack, and Babel
 
 https://www.valentinog.com/blog/react-webpack-babel/
 
-'mkdir webpack-react-tutorial && cd $_'
+`mkdir webpack-react-tutorial && cd $_`
 
-'mkdir -p src'
+`mkdir -p src`
 
-'npm init -y'
+`npm init -y`
 
-'npm i webpack --save-dev'
+`npm i webpack --save-dev`
 
-'npm i webpack-cli --save-dev'
+`npm i webpack-cli --save-dev`
 
 Next up add the webpackcommand inside package.json:
 `
@@ -24,34 +24,39 @@ Older webpack’s version did automatically look for a configuration file.
 Since version 4 that is no longer the case: you can start developing straigh away.
 In the next section we’ll install and configure Babel for transpiling our code.
 
-* npm i @babel/core babel-loader @babel/preset-env @babel/preset-react --save-dev
+`npm i @babel/core babel-loader @babel/preset-env @babel/preset-react --save-dev`
 
 Don’t forget to configure Babel! Create a new file named .babelrc inside the project folder:
-* {
-*   "presets": ["@babel/preset-env", "@babel/preset-react"]
-* }
+`
+{
+   "presets": ["@babel/preset-env", "@babel/preset-react"]
+}
+`
 
 Create a file named webpack.config.js and fill it like the following:
-* module.exports = {
-*   module: {
-*     rules: [
-*       {
-*         test: /\.(js|jsx)$/,
-*         exclude: /node_modules/,
-*         use: {
-*           loader: "babel-loader"
-*         }
-*       }
-*     ]
-*   }
-* };
-* 
-* npm i react react-dom --save-dev
+`
+ module.exports = {
+   module: {
+     rules: [
+       {
+         test: /\.(js|jsx)$/,
+         exclude: /node_modules/,
+         use: {
+          loader: "babel-loader"
+         }
+       }
+     ]
+   }
+ };
+`
 
-* mkdir -p src/js/components/{container,presentational}
+`npm i react react-dom --save-dev`
 
-* touch src/js/components/container/FormContainer.jsx
+`mkdir -p src/js/components/{container,presentational}`
 
+`touch src/js/components/container/FormContainer.jsx`
+
+`
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
@@ -73,11 +78,13 @@ class FormContainer extends Component {
 }
 
 export default FormContainer;
+`
 
-* touch src/js/components/presentational/Input.jsx
+`touch src/js/components/presentational/Input.jsx`
 
-* npm i prop-types --save-dev
+`npm i prop-types --save-dev`
 
+`
 import React from "react";
 import PropTypes from "prop-types";
 
@@ -105,12 +112,14 @@ Input.propTypes = {
 };
 
 export default Input;
-
+`
 
 At this point we’re ready to update our container component to include the text input:
-* import React, { Component } from "react";
-* import ReactDOM from "react-dom";
-* import Input from "../presentational/Input.jsx";
+
+`
+ import React, { Component } from "react";
+ import ReactDOM from "react-dom";
+ import Input from "../presentational/Input.jsx";
 
 class FormContainer extends Component {
   constructor() {
@@ -145,19 +154,28 @@ class FormContainer extends Component {
 }
 
 export default FormContainer;
+`
+
 And now it’s time to wire things up! webpack expects the entry point to be ./src/index.js. Create the file and place an import directive into it for requiring the container component:
-* import FormContainer from "./js/components/container/FormContainer.jsx";
+
+`import FormContainer from "./js/components/container/FormContainer.jsx";`
 
 With this in place we’re ready to create our bundle by running:
-* npm run build
+
+`npm run build`
 
 Give Webpack a second and see the bundle come to life!
 The bundle will be placed into
-* ./dist/main.js
+
+`./dist/main.js`
+
 Now let’s bring our React experiment to life by including the bundle into an HTML page.
 
-* npm i html-webpack-plugin html-loader --save-dev
+`npm i html-webpack-plugin html-loader --save-dev`
+
 Then update the webpack configuration:
+
+`
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 
 module.exports = {
@@ -187,8 +205,11 @@ module.exports = {
     })
   ]
 };
+`
 
 Next up create an HTML file into ./src/index.html (feel free to use whichever CSS library you prefer):
+
+`
 <!DOCTYPE html>
 <html lang="en">
 
@@ -214,25 +235,35 @@ Next up create an HTML file into ./src/index.html (feel free to use whichever CS
 </body>
 
 </html>
+`
 
 One last thing is missing! We must tell our React component to hook itself into the id create-article-form
-Open up ./src/js/components/container/FormContainer.jsx and add the following at the bottom of the file:
-* const wrapper = document.getElementById("create-article-form");
-* wrapper ? ReactDOM.render(<FormContainer />, wrapper) : false;
+Open up `./src/js/components/container/FormContainer.jsx` and add the following at the bottom of the file:
+
+`
+ const wrapper = document.getElementById("create-article-form");
+ wrapper ? ReactDOM.render(<FormContainer />, wrapper) : false;
+`
 Close and save the file.
 Now run the build again with:
-* npm run build
 
-* npm i webpack-dev-server --save-dev
+
+`npm run build`
+
+`npm i webpack-dev-server --save-dev`
 
 Open up package.json to add the start script:
-* "scripts": {
-*   "start": "webpack-dev-server --open --mode development",
-*   "build": "webpack --mode production"
-* }
+
+`
+ "scripts": {
+   "start": "webpack-dev-server --open --mode development",
+   "build": "webpack --mode production"
+ }
+`
 save and close the file.
 Now, by running:
-* npm start
+
+`npm start`
 
 How to set up React, webpack, and Babel: wrapping up
 create-react-app is the way to go for starting off a new React project. Almost everything is configured out of the box. But sooner or later you may want to extend or tweak webpack a bit.
