@@ -494,3 +494,235 @@ You will use connect with two or three arguments depending on the use case. The 
 
 What does mapStateToProps do in react-redux? mapStateToProps does exactly what its name suggests: it connects a part of the Redux state to the props of a React component. By doing so a connected React component will have access to the exact part of the store it needs.
 And what about mapDispatchToProps? mapDispatchToProps does something similar, but for actions. mapDispatchToProps connects Redux actions to React props. This way a connected React component will be able to dispatch actions.
+
+
+##React Redux tutorial: App component and Redux store
+
+We saw that mapStateToProps connects a portion of the Redux state to the props of a React component. You may wonder: is this enough for connecting Redux with React? No, it’s not.
+To start off connecting Redux with React we’re going to use Provider.
+Provider is an high order component coming from react-redux.
+Using layman’s terms, Provider wraps up your React application and makes it aware of the entire Redux’s store.
+Why so? We saw that in Redux the store manages everything. React must talk to the store for accessing the state and dispatching actions.
+Enough theory.
+Open up src/js/index.js, wipe out everything and update the file with the following code (if you’re in create-react-app modify src/index.js instead):
+
+```
+import React from "react";
+import { render } from "react-dom";
+import { Provider } from "react-redux";
+import store from "./store/index";
+import App from "./components/App.jsx";
+// if you're in create-react-app import the files as:
+// import store from "./js/store/index";
+// import App from "./js/components/App.jsx";
+
+render(
+  <Provider store={store}>
+    <App />
+  </Provider>,
+  // The target element might be either root or app,
+  // depending on your development environment
+  // document.getElementById("app")
+  document.getElementById("root")
+);
+```
+
+You see? Provider wraps up your entire React application. Moreover it gets the store as a prop.
+Now let’s create the App component since we’re requiring it. It’s nothing special: App should import a List component and render itself.
+Create a directory for holding the components:
+
+`mkdir -p src/js/components`
+
+and a new file named App.jsx inside src/js/components:
+
+```
+// src/js/components/App.jsx
+import React from "react";
+import List from "./List";
+
+const App = () => (
+  <div className="row mt-5">
+    <div className="col-md-4 offset-md-1">
+    <h2>Articles</h2>
+      <List />
+    </div>
+  </div>
+);
+
+export default App;
+
+React Redux tutorial: List component and Redux state
+Create a new file named List.jsx inside src/js/components. It should look like the following:
+// src/js/components/List.jsx
+
+import React from "react";
+import { connect } from "react-redux";
+
+const mapStateToProps = state => {
+  return { articles: state.articles };
+};
+
+const ConnectedList = ({ articles }) => (
+  <ul className="list-group list-group-flush">
+    {articles.map(el => (
+      <li className="list-group-item" key={el.id}>
+        {el.title}
+      </li>
+    ))}
+  </ul>
+);
+
+const List = connect(mapStateToProps)(ConnectedList);
+
+export default List;
+```
+
+
+The List component receives the prop articles which is a copy of the articles array we saw in the Redux state. It comes from the reducer:
+```
+const initialState = {
+  articles: []
+};
+
+function rootReducer(state = initialState, action) {
+  if (action.type === ADD_ARTICLE) {
+    return Object.assign({}, state, {
+      articles: state.articles.concat(action.payload)
+    });
+  }
+  return state;
+}
+```
+
+React protip: take the habit of validating props with PropTypes or even better, use TypeScript
+
+
+##React Redux tutorial: Form component and Redux actions
+
+Create a new file named Form.jsx inside src/js/components. It should look like the following:
+
+```
+// src/js/components/Form.jsx
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import uuidv1 from "uuid";
+import { addArticle } from "../actions/index";
+
+function mapDispatchToProps(dispatch) {
+  return {
+    addArticle: article => dispatch(addArticle(article))
+  };
+}
+
+class ConnectedForm extends Component {
+  constructor() {
+    super();
+
+    this.state = {
+      title: ""
+    };
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleChange(event) {
+    this.setState({ [event.target.id]: event.target.value });
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+    const { title } = this.state;
+    const id = uuidv1();
+    this.props.addArticle({ title, id });
+    this.setState({ title: "" });
+  }
+
+  render() {
+    const { title } = this.state;
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="title">Title</label>
+          <input
+            type="text"
+            className="form-control"
+            id="title"
+            value={title}
+            onChange={this.handleChange}
+          />
+        </div>
+        <button type="submit" className="btn btn-success btn-lg">
+          SAVE
+        </button>
+      </form>
+    );
+  }
+}
+
+const Form = connect(null, mapDispatchToProps)(ConnectedForm);
+
+export default Form;
+```
+
+mapDispatchToProps connects Redux actions to React props. This way a connected component is able to dispatch actions.
+
+Finally the component gets exported as Form. Form is the result of connecting ConnectedForm with the Redux store.
+Side note: the first argument for connect must be null when mapStateToProps is absent like in the Form example. Otherwise you’ll get TypeError: dispatch is not a function.
+Our components are all set!
+Update App to include the Form component:
+
+```
+import React from "react";
+import List from "./List.jsx";
+import Form from "./Form.jsx";
+
+const App = () => (
+  <div className="row mt-5">
+    <div className="col-md-4 offset-md-1">
+      <h2>Articles</h2>
+      <List />
+    </div>
+    <div className="col-md-4 offset-md-1">
+      <h2>Add a new article</h2>
+      <Form />
+    </div>
+  </div>
+);
+
+export default App;
+```
+
+
+make sure that document.getElementById(“app”) in src/js/index.js matches a real element inside the page:
+
+```
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" >
+    <title>How to set up React, Webpack, and Babel</title>
+</head>
+
+<body>
+    <div class="container">
+        <div id="root">
+        </div>
+    </div>
+</body>
+
+</html>
+```
+
+Install uuid with:
+
+`npm i uuid --save-dev`
+
+Now run webpack (or Parcel) with:
+
+`npm start`
+
+and head over to http://localhost:8080
+
