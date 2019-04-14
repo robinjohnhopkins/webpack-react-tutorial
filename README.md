@@ -812,3 +812,176 @@ export default store;
 ```
 
 Save and close the file, run npm start and check if the middleware works. Try to add an article with “money” in its title:
+
+
+##React Redux tutorial: asynchronous actions in Redux with Redux Thunk
+
+`npm i redux-thunk --save-dev`
+
+Now let’s load the middleware in src/js/store/index.js:
+
+```
+// src/js/store/index.js
+
+import { createStore, applyMiddleware, compose } from "redux";
+import rootReducer from "../reducers/index";
+import { forbiddenWordsMiddleware } from "../middleware";
+import thunk from "redux-thunk";
+
+const storeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+
+const store = createStore(
+  rootReducer,
+  storeEnhancers(applyMiddleware(forbiddenWordsMiddleware, thunk))
+);
+
+export default store;
+```
+
+At this point we need to refactor getData to use redux-thunk. Open up src/js/actions/index.jsand update the action creator like so:
+
+```
+// src/js/actions/index.js
+
+// ...
+
+export function getData() {
+  return function(dispatch) {
+    return fetch("https://jsonplaceholder.typicode.com/posts")
+      .then(response => response.json())
+      .then(json => {
+        dispatch({ type: "DATA_LOADED", payload: json });
+      });
+  };
+}
+```
+
+That’s redux-thunk!
+
+##React Redux tutorial: asynchronous actions in Redux with Redux Thunk
+
+We just learned that calling fetch from an action creator does not work. That’s because Redux is expecting objects as actions but we’re trying to return a Promise. With redux-thunk we can overcome the problem and return functions from action creators. Inside that function we can call APIs, delay the dispatch of an action, and so on.
+First we need to install the middleware with:
+
+`npm i redux-thunk --save-dev`
+
+Now let’s load the middleware in src/js/store/index.js:
+
+```
+// src/js/store/index.js
+
+import { createStore, applyMiddleware, compose } from "redux";
+import rootReducer from "../reducers/index";
+import { forbiddenWordsMiddleware } from "../middleware";
+import thunk from "redux-thunk";
+
+const storeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+
+const store = createStore(
+  rootReducer,
+  storeEnhancers(applyMiddleware(forbiddenWordsMiddleware, thunk))
+);
+
+export default store;
+```
+
+At this point we need to refactor getData to use redux-thunk. Open up src/js/actions/index.jsand update the action creator like so:
+
+```
+// src/js/actions/index.js
+
+// ...
+
+export function getData() {
+  return function(dispatch) {
+    return fetch("https://jsonplaceholder.typicode.com/posts")
+      .then(response => response.json())
+      .then(json => {
+        dispatch({ type: "DATA_LOADED", payload: json });			// notice dispatch!
+      });
+  };
+}
+```
+
+That’s redux-thunk!
+
+A few things worth noting in the new version of getData: the fetch call gets returned from an outer function and the outer function has dispatch as a parameter. If you want to access the state inside the action creator you can add getState in the parameter’s list.
+Also, notice the use of dispatch inside then. We need to explicitly call dispatch inside the async function for dispatching the action.
+With that in place we’re ready to update our reducer with the new action type. Open up src/js/reducers/index.js and add a new if statement. We can also add a new key inside initialState for saving the articles from the API:
+
+```
+// src/js/reducers/index.js
+import { ADD_ARTICLE } from "../constants/action-types";
+
+const initialState = {
+  articles: [],
+  remoteArticles: []
+};
+
+function rootReducer(state = initialState, action) {
+  if (action.type === ADD_ARTICLE) {
+    return Object.assign({}, state, {
+      articles: state.articles.concat(action.payload)
+    });
+  }
+
+  if (action.type === "DATA_LOADED") {
+    return Object.assign({}, state, {
+      remoteArticles: state.remoteArticles.concat(action.payload)
+    });
+  }
+  return state;
+}
+
+export default rootReducer;
+```
+
+(I know, I didn’t put DATA_LOADED inside its own named costant. I’d left as an exercise for you. Hope you don’t mind!)
+Finally we’re ready to update our Post component for displaying our “remote” posts. We will use mapStateToProps for selecting ten posts:
+
+```
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import { getData } from "../actions/index";
+
+export class Post extends Component {
+  constructor() {
+    super();
+  }
+
+  componentDidMount() {
+    this.props.getData();
+  }
+
+  render() {
+    return (
+      <ul className="list-group list-group-flush">
+        {this.props.articles.map(el => (
+          <li className="list-group-item" key={el.id}>
+            {el.title}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+}
+
+function mapStateToProps(state) {
+  return {
+    articles: state.remoteArticles.slice(0, 10)
+  };
+}
+
+export default connect(
+  mapStateToProps,
+  { getData }
+)(Post);
+```
+
+Save and close the files, and everything should work fine:
+
+To recap: Redux does not understand other types of action than a plain object. If you want to move asynchronous logic from React to Redux and being able to return functions instead of plain objects you have to use a custom middleware.
+redux-thunk is a middleware for Redux. With redux-thunk you can return functions from action creators, not only objects. You can do asynchronous work inside your actions and dispatch other actions in response to AJAX calls.
+When to use redux-thunk? redux-thunk is a nice middleware that works very well for simpler use cases. But if your asynchronous logic involves more complex scenarios then redux saga might be a better fit.
+And in the next section we’ll finally take a look at Redux Saga. Hold tight!
+
