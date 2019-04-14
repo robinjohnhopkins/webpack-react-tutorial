@@ -2,15 +2,19 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import uuidv1 from "uuid";
-import { addArticle } from "../actions/index";
+import { addArticle, clearStatus } from "../actions/index";
 import StatusAlert, { StatusAlertService } from 'react-status-alert'
 import 'react-status-alert/dist/status-alert.css'
 
 function mapDispatchToProps(dispatch) {
   return {
-    addArticle: article => dispatch(addArticle(article))
+    addArticle: article => dispatch(addArticle(article)),
+    clearStatus: () => dispatch(clearStatus())
   };
 }
+const mapStateToProps = state => {
+  return { status: state.status };
+};
 class ConnectedForm extends Component {
   constructor() {
     super();
@@ -47,9 +51,15 @@ class ConnectedForm extends Component {
   }
   render() {
     const { title } = this.state;
+    if (this.props.status && this.props.status.length){
+      this.removeAlert();
+      StatusAlertService.showError(this.props.status);
+      this.props.clearStatus();
+    }
     return (
       <form onSubmit={this.handleSubmit}>
         <div className="form-group">
+          <pre>{this.props.status}</pre>
           <label htmlFor="title">Title</label>
           <input
             type="text"
@@ -67,5 +77,5 @@ class ConnectedForm extends Component {
     );
   }
 }
-const Form = connect(null, mapDispatchToProps)(ConnectedForm);
+const Form = connect(mapStateToProps, mapDispatchToProps)(ConnectedForm);
 export default Form;

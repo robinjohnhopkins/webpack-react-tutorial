@@ -1,7 +1,10 @@
 // src/js/actions/index.js
-import { ADD_ARTICLE } from "../constants/action-types";
+import { ADD_ARTICLE, CLEAR_STATUS } from "../constants/action-types";
 export function addArticle(payload) {
   return { type: ADD_ARTICLE, payload };
+}
+export function clearStatus() {
+  return { type: CLEAR_STATUS };
 }
 // our new action creator. Will it work?
 export function getData() {

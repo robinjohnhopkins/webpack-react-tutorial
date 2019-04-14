@@ -1167,3 +1167,167 @@ git clone https://github.com/valentinogagliardi/react-redux-tutorial
 cd react-redux-tutorial
 git checkout your-first-redux-saga
 ```
+
+## How to use spread operator to remove item from list OR object
+```
+    var seasons = ['winter', 'spring', 'summer', 'autumn'];  
+    var headx, restArrayx;  
+    [headx, ...restArrayx] = seasons;
+    console.log(headx);      // => 'winter'  
+    console.log(restArrayx); // => ['spring', 'summer', 'autumn']  
+
+    var months = {j: 'jan',f: 'feb',m: 'mar'};  
+    var {j, ...restArrayy} = months; 
+    console.log(restArrayy); // => ['spring', 'summer', 'autumn'] 
+```
+
+## Add React Status Alert
+```
+npm i react-status-alert
+npm install style-loader --save
+npm install css-loader --save
+```
+
+```
+// src/js/actions/index.js
+import { ADD_ARTICLE, CLEAR_STATUS } from "../constants/action-types";
+...
+export function clearStatus() {
+  return { type: CLEAR_STATUS };
+}
+```
+
+action-types.js
+```
+export const CLEAR_STATUS = "CLEAR_STATUS";
+```
+
+src/js/middleware/index.js
+```
+        if (foundWord.length) {
+          return dispatch({ type: FOUND_BAD_WORD, payload: foundWord });
+        }
+```
+
+src/js/reducers/index.js
+```
+...
+  if (action.type === FOUND_BAD_WORD) {
+    console.log('Found bad word');
+    return Object.assign({}, state, {
+      status: "Found bad word: " + action.payload
+    });
+  }
+  if (action.type === "DATA_LOADED") {
+    console.log('DATA_LOADED sweet', action.payload);
+    return Object.assign({}, state, {
+      remoteArticles: state.remoteArticles.concat(action.payload)
+    });
+  }
+  if (action.type === CLEAR_STATUS) {
+
+    // How to use spread operator to remove item from list OR object
+    // var seasons = ['winter', 'spring', 'summer', 'autumn'];  
+    // var headx, restArrayx;  
+    // [headx, ...restArrayx] = seasons;
+    // console.log(headx);      // => 'winter'  
+    // console.log(restArrayx); // => ['spring', 'summer', 'autumn']  
+
+    // var months = {j: 'jan',f: 'feb',m: 'mar'};  
+    // var {j, ...restArrayy} = months; 
+    // console.log(restArrayy); // => ['spring', 'summer', 'autumn']  
+
+    const {status, ...restState} = state;
+    //console.log('CLEAR_STATUS restState', restState);
+    return Object.assign({}, restState);
+  }
+  
+
+  return state;
+}
+```
+
+src/js/components/Form.jsx
+```
+// src/js/components/Form.jsx
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import uuidv1 from "uuid";
+import { addArticle, clearStatus } from "../actions/index";
+import StatusAlert, { StatusAlertService } from 'react-status-alert'
+import 'react-status-alert/dist/status-alert.css'
+
+function mapDispatchToProps(dispatch) {
+  return {
+    addArticle: article => dispatch(addArticle(article)),
+    clearStatus: () => dispatch(clearStatus())
+  };
+}
+const mapStateToProps = state => {
+  return { status: state.status };
+};
+class ConnectedForm extends Component {
+  constructor() {
+    super();
+    this.state = {
+      title: '',
+      alertId: ''
+    };
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.showSuccessAlert = this.showSuccessAlert.bind(this);
+    this.removeAlert = this.removeAlert.bind(this);
+  }
+  showSuccessAlert(title) {
+    const alertId = StatusAlertService.showSuccess(title + ' submitted');
+    this.setState({ alertId });
+  }
+  
+  removeAlert() {
+    StatusAlertService.removeAlert(this.state.alertId);
+  }
+  handleChange(event) {
+    this.setState({ [event.target.id]: event.target.value });
+  }
+  handleSubmit(event) {
+    event.preventDefault();
+    const { title } = this.state;
+    if (title.length <= 0){
+      return;
+    }
+    const id = uuidv1();
+    this.props.addArticle({ title, id });
+    this.showSuccessAlert(title);
+    this.setState({ title: "" });
+  }
+  render() {
+    const { title } = this.state;
+    if (this.props.status && this.props.status.length){
+      this.removeAlert();
+      StatusAlertService.showError(this.props.status);
+      this.props.clearStatus();
+    }
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <div className="form-group">
+          <pre>{this.props.status}</pre>
+          <label htmlFor="title">Title</label>
+          <input
+            type="text"
+            className="form-control"
+            id="title"
+            value={title}
+            onChange={this.handleChange}
+          />
+        </div>
+        <button type="submit" className="btn btn-success btn-lg">
+          SAVE
+        </button>
+        <StatusAlert/>
+      </form>
+    );
+  }
+}
+const Form = connect(mapStateToProps, mapDispatchToProps)(ConnectedForm);
+export default Form;
+```
