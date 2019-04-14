@@ -985,3 +985,185 @@ redux-thunk is a middleware for Redux. With redux-thunk you can return function
 When to use redux-thunk? redux-thunk is a nice middleware that works very well for simpler use cases. But if your asynchronous logic involves more complex scenarios then redux saga might be a better fit.
 And in the next section we’ll finally take a look at Redux Saga. Hold tight!
 
+##Stop Right There
+I have stopped here and not done the next bit which is convert redux-thunk to reac-redux-saga. I have played around a bit to get used to the code.
+But in case the original blog is removed the conversion is here.
+
+##React Redux tutorial: introducing Redux Saga
+redux thunk makes perfect sense for a lot of project. In fact I encourage starting with redux thunk when you feel the need to manage async flow in Redux. No need to overcomplicate things. You can also entirely skip redux thunk and move your asynchronous logic to a custom middleware. But in reality asynchronous actions can be trickier to test and organize.
+
+For this reason most developers prefer an alternative approach: redux saga.
+
+What is redux saga? redux saga is a Redux middleware for managing side effects. The idea with redux saga is that of having a separate thread in your application for dealing with impure actions: API calls, storage access.
+
+redux saga is different from an async action in terms of both syntax and code organization. With redux thunk you can put an API call directly inside an action creator while in redux saga you can have clear separation between synchronous and asynchronous logic. And that logic will be totally separated from your Redux code.
+
+Moreover redux saga does not use regular JavaScript function. You will see a lot of asterisks and yield in your sagas.
+
+Before moving further let’s look for a moment at what those asterisks mean!
+
+React Redux tutorial: Redux Saga and generator functions
+What is a saga? In terms of JavaScript code a redux saga could be a single file containing:
+
+a worker function
+a watcher function
+
+We will see what they do in the next section but for now take note: those functions are called sagas and the main difference from regular functions is that sagas are based on generator functions.
+
+Generator functions in JavaScript had been added in ES6 (2015). In brief, a generator function is a JavaScript function which can be paused and resumed during its execution. Regular JavaScript function cannot be paused. Consider this loop:
+
+```
+function classicLoop() {
+    for (var i = 0; i < 15; i++) {
+        console.log(i)
+    }
+}
+```
+
+If you run the function the output of this code will be 1,2,3,4,5 … 15. There is no way to stop the loop from the outside. A generator function on the other hand makes possibile to control the loop “on demand”.
+
+The main difference between regular functions and generator functions in JavaScript is in the syntax too. Generator functions are denoted with an asterisk and make use of the yield keyword. Let’s rewrite our code to use a generator function:
+
+```
+function* generatorLoop() {
+    for (var i = 0; i < 15; i++) {
+        yield console.log(i)
+    }
+}
+```
+
+First thing first I cannot run this function with generatorLoop(). For using the generator I must capture it in a variable and from there I can access the loop step after step with next():
+
+```
+var myGenerator = generatorLoop()
+myGenerator.next()
+myGenerator.next()
+myGenerator.next()
+myGenerator.next()
+```
+
+It’s easy to imagine what the output will be: first call to next 1, second call to next 2 and so on.
+
+So generator functions in JavaScript are function which can be paused and resumed on demand. redux saga relies heavily on generator functions but the good thing is that you won’t need to call next() in your code. redux saga handles that for you under the hood.
+
+And in the next section we’ll finally implement our first redux saga!
+
+For learning more about generator functions take a look at function* on MDN.
+
+React Redux tutorial: writing your first Redux Saga
+In the previous sections we built a Post component which calls this.props.getData upon mounting to the DOM. getData is an asynchronous Redux action based on Redux thunk. That action is in charge for getting data from the remote API.
+
+In this section we will refactor our code to use a Redux saga instead of a thunk. I won’t cover the entire Saga API in this post so please bear with me. We’ll just take a look at a bunch of methods.
+
+Before getting started install redux saga with:
+
+`npm i redux-saga --save-dev`
+
+Now we can refactor our async action and remove the fetch call. From now on our action creator will just dispatch a plain action. Open up src/js/actions/index.js and modify getData to return a plain action named DATA_REQUESTED:
+
+```
+export function getData() {
+  return { type: "DATA_REQUESTED" };
+}
+```
+
+This very DATA_REQUESTED action will be “intercepted” by Redux saga with the takeEvery method. You can imagine takeEvery “taking” every DATA_REQUESTED action passing inside our app and starting some work in response to that action.
+
+Earlier we saw that a redux saga could be a single file containing:
+
+a watcher function
+a worker function
+
+The watcher is basically a generator function “watching” for every action we are interested in. In response to that action, the watcher will call a worker saga, which is another generator function for doing the actual API call.
+
+The worker saga will call the remote API with the call method from redux-saga/effects. When the data is loaded we can dispatch another action from our saga with the put method, again, from redux-saga/effects. Makes sense?
+
+Armed with this knowledge we can lay down our first redux saga! First create a new folder for holding your sagas:
+
+`mkdir -p src/js/sagas`
+
+and then create a new file named api-saga.js in src/js/sagas. And here’s our saga:
+
+```
+import { takeEvery, call, put } from "redux-saga/effects";
+export default function* watcherSaga() {
+  yield takeEvery("DATA_REQUESTED", workerSaga);
+}
+function* workerSaga() {
+  try {
+    const payload = yield call(getData);
+    yield put({ type: "DATA_LOADED", payload });
+  } catch (e) {
+    yield put({ type: "API_ERRORED", payload: e });
+  }
+}
+```
+
+Let’s break down the logic flow of our saga. We can read the code like so:
+
+take every action named DATA_REQUESTED and for each action of that type spin a worker saga
+inside the worker saga call a function named getData
+if the function does not result in any error then dispatch (put) a new action named DATA_LOADED, alongside with a payload
+if the function results in an error then dispatch (put) a new action named API_ERRORED, alongside with a payload (the error)
+The only thing we’re missing in our code is the getData function. Open up src/js/sagas/api-saga.js again and add the function:
+
+```
+import { takeEvery, call, put } from "redux-saga/effects";
+export default function* watcherSaga() {
+  yield takeEvery("DATA_REQUESTED", workerSaga);
+}
+function* workerSaga() {
+  try {
+    const payload = yield call(getData);
+    yield put({ type: "DATA_LOADED", payload });
+  } catch (e) {
+    yield put({ type: "API_ERRORED", payload: e });
+  }
+}
+function getData() {
+  return fetch("https://jsonplaceholder.typicode.com/posts").then(response =>
+    response.json()
+  );
+}
+```
+
+And finally we can wire up redux saga to our redux store. Open up src/js/store/index.js and update the store as follows:
+
+```
+// src/js/store/index.js
+import { createStore, applyMiddleware, compose } from "redux";
+import rootReducer from "../reducers/index";
+import { forbiddenWordsMiddleware } from "../middleware";
+import createSagaMiddleware from "redux-saga";
+import apiSaga from "../sagas/api-saga";
+const initialiseSagaMiddleware = createSagaMiddleware();
+const storeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+const store = createStore(
+  rootReducer,
+  storeEnhancers(
+    applyMiddleware(forbiddenWordsMiddleware, initialiseSagaMiddleware)
+  )
+);
+initialiseSagaMiddleware.run(apiSaga);
+export default store;
+```
+
+Worth noting in this file the createSagaMiddleware method and initialiseSagaMiddleware.run for running our saga.
+
+Now close and save the file. Run npm start and ta-da! You should see the exact same output again with the remote posts correctly displaying in the browser.
+
+Congratulations! You created your first redux saga!
+
+An exercise for you: our reducer was ready for handling DATA_LOADED alonside with its payload. Complete the reducer for dealing with API_ERRORED.
+
+An exercise for you: move DATA_LOADED, API_ERRORED, and DATA_REQUESTED inside named constants.
+
+An exercise for you: do we need to better account for fetch errors inside getData?
+
+CODE: you can access the complete example at react-redux-tutorial on Github. Clone the repo and checkout the most recent branch:
+
+```
+git clone https://github.com/valentinogagliardi/react-redux-tutorial
+cd react-redux-tutorial
+git checkout your-first-redux-saga
+```
