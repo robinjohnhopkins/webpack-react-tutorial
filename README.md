@@ -726,3 +726,89 @@ Now run webpack (or Parcel) with:
 
 and head over to http://localhost:8080
 
+
+##React Redux tutorial: what is a Redux middleware?
+
+`mkdir -p src/js/middleware`
+
+Now create a new file named index.js in src/js/middleware. The structure of our first middleware should match the following:
+
+```
+function forbiddenWordsMiddleware({ dispatch }) {
+  return function(next){
+    return function(action){
+      // do your stuff
+      return next(action);
+    }
+  }
+}
+```
+
+For now we don’t need getState, we just get dispatch as the first parameter. Nice. Let’s implement the logic now. We need to check the action payload, namely the title property. If the title matches one or more bad words we stop the user from adding the article.
+Also, the check should fire up only when the action is of type ADD_ARTICLE. It makes sense. How about this one?
+
+```
+import { ADD_ARTICLE } from "../constants/action-types";
+
+const forbiddenWords = ["spam", "money"];
+
+export function forbiddenWordsMiddleware({ dispatch }) {
+  return function(next) {
+    return function(action) {
+      // do your stuff
+      if (action.type === ADD_ARTICLE) {
+        
+        const foundWord = forbiddenWords.filter(word =>
+          action.payload.title.includes(word)
+        );
+
+        if (foundWord.length) {
+          return dispatch({ type: "FOUND_BAD_WORD" });
+        }
+      }
+      return next(action);
+    };
+  };
+}
+```
+
+Here’s what the middleware does: when action type is ADD_ARTICLE check if action.payload.title contains a bad word. If it does then dispatch an action of type “FOUND_BAD_WORD”, otherwise let the next action pass.
+And this last point is really important: you should always return next(action) in your middlewares. If you forget to return next(action) the application will stop, and no other action will reach the reducer.
+Now, time to wire up forbiddenWordsMiddleware to the Redux store. For that we need to import our middleware, another utility from Redux (applyMiddleware) and then cook everything together.
+Open up  src/js/store/index.js and modify the file like so:
+
+```
+// src/js/store/index.js
+
+import { createStore, applyMiddleware } from "redux";
+import rootReducer from "../reducers/index";
+import { forbiddenWordsMiddleware } from "../middleware";
+
+const store = createStore(
+  rootReducer,
+  applyMiddleware(forbiddenWordsMiddleware)
+);
+
+export default store;
+```
+
+Oh, and for using Redux Dev Tools together with other middlewares here’s what you should do (notice the use of compose):
+
+```
+// src/js/store/index.js
+
+import { createStore, applyMiddleware, compose } from "redux";
+import rootReducer from "../reducers/index";
+import { forbiddenWordsMiddleware } from "../middleware";
+
+const storeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+
+const store = createStore(
+  rootReducer,
+  storeEnhancers(applyMiddleware(forbiddenWordsMiddleware))
+);
+
+export default store;
+```
+
+Save and close the file, run npm start and check if the middleware works. Try to add an article with “money” in its title:

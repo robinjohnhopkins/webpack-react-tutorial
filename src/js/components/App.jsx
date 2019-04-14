@@ -4,7 +4,7 @@ import List from "./List.jsx";
 import Form from "./Form.jsx";
 const App = () => (
     <div>
-        <div class="header">My App</div>
+        <div className="header">My App</div>
         <div className="row mt-5">
             <div className="col-md-4 offset-md-1">
             <h2>Articles</h2>
