@@ -16,6 +16,11 @@ module.exports = {
             loader: "html-loader"
           }
         ]
+      },
+      {
+        test: /\.css$/,  
+        include: /node_modules/,  
+        loaders: ['style-loader', 'css-loader'],
       }
     ]
   },
